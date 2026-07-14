@@ -1,9 +1,23 @@
 import pandas as pd
+from pathlib import Path
 
-# Read the Excel file
-df = pd.read_excel("/workspaces/allica_hometask_orders/data/raw/orders_2023.xlsx")
+def convert_all_xlsx(input_dir: str | Path) -> None:
+    input_path = Path(input_dir)
 
-# Export to CSV
-df.to_csv("/workspaces/allica_hometask_orders/data/raw/orders_2023.csv", index=False)
+    for xlsx_file in input_path.glob("*.xlsx"):
+        csv_file = xlsx_file.with_suffix(".csv")
+        try:
+            df = pd.read_excel(xlsx_file)
+            df.to_csv(csv_file, index=False)
+            print(f"✅ Converted {xlsx_file.name} -> {csv_file.name}")
+        except Exception as e:
+            print(f"❌ Failed to convert {xlsx_file.name}: {e}")
+            continue
 
-print("✅ Conversion complete! File saved as orders_2023.csv")
+        # Try deletion separately
+        try:
+            print(f"🗑️ Attempting to delete {xlsx_file}")
+            xlsx_file.unlink()
+            print(f"🗑️ Deleted {xlsx_file.name}")
+        except Exception as del_err:
+            print(f"⚠️ Could not delete {xlsx_file.name}: {del_err}")

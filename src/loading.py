@@ -123,6 +123,7 @@ def prepare_fact_row(connection: Any, row: dict[str, Any], source_file_name: str
         },
     )
 
+#duplicate order check
     order_number = clean_text(row.get("OrderNumber"))
     existing_order = connection.execute(
         "SELECT 1 FROM fact_orders WHERE order_number = ?",

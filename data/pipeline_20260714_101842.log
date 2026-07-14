@@ -1,0 +1,11 @@
+2026-07-14 10:18:42,024 INFO Warehouse schema initialized
+2026-07-14 10:18:42,473 INFO Converted orders_2023.xlsx -> orders_2023.csv
+2026-07-14 10:18:42,474 INFO Processing file orders_2023.csv
+2026-07-14 10:18:42,611 INFO Archived processed file orders_2023.csv to data/raw/archive/orders_2023.csv
+2026-07-14 10:18:43,237 WARNING Unable to send email notification to bhatpriyamvada@gmail.com: SMTP AUTH extension not supported by server.
+2026-07-14 10:18:43,238 INFO Processed file: orders_2023.csv
+Execution date: 2026-07-14 10:18:42
+Total rows in file: 26
+Rows loaded: 26
+Rows rejected: 0
+Reject reasons: None

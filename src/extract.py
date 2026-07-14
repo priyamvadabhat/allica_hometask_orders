@@ -11,17 +11,22 @@ import pandas as pd
 def convert_xlsx_to_csv(input_dir: Path) -> None:
     """
     Convert all .xlsx files in the input directory to .csv files.
-    The converted CSVs will be saved in the same folder.
+    The converted CSVs will be saved in the same folder, and the original XLSX will be deleted.
     """
     for xlsx_file in input_dir.glob("*.xlsx"):
         csv_file = xlsx_file.with_suffix(".csv")
         try:
+            # Read Excel and save as CSV
             df = pd.read_excel(xlsx_file)
             df.to_csv(csv_file, index=False)
             logger.info("Converted %s -> %s", xlsx_file.name, csv_file.name)
-        except Exception as e:
-            logger.error("Failed to convert %s: %s", xlsx_file.name, e)
 
+            # Delete the original XLSX file
+            xlsx_file.unlink()
+            logger.info("Deleted original XLSX file %s", xlsx_file.name)
+
+        except Exception as e:
+            logger.error("Failed to convert or delete %s: %s", xlsx_file.name, e)
 
 
 def discover_files(input_dir: str | Path) -> list[Path]:
