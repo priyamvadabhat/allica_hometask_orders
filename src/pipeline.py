@@ -3,6 +3,8 @@
 # Optional email notifications:
 # The ETL pipeline will work normally without SMTP setup.
 # If SMTP_HOST is configured in the environment, notifications will be sent.
+
+#Imports and setup
 import os
 import smtplib
 from datetime import datetime, timezone
