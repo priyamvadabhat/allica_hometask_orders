@@ -1,0 +1,9 @@
+# Python runtime requirement
+# Python 3.10+ is required to run the pipeline.
+
+# Test dependency
+pytest>=8.0.0
+
+# Note:
+# The ETL pipeline itself uses only Python standard-library modules.
+# No additional third-party packages are required for core execution.

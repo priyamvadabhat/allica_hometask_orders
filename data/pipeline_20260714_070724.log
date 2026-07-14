@@ -1,0 +1,5 @@
+2026-07-14 07:07:24,817 INFO Warehouse schema initialized
+2026-07-14 07:07:24,818 INFO Skipping unchanged file orders_2023.csv
+2026-07-14 07:07:24,828 INFO SMTP not configured; notification logged for bhatpriyamvada@gmail.com
+2026-07-14 07:07:24,828 INFO Skipped file: orders_2023.csv
+Reason: File skipped because it had the same data as a previously loaded file.
