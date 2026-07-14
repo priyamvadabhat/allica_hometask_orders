@@ -65,6 +65,12 @@ This project builds a small analytical warehouse in SQLite from CSV order files.
   python run_pipeline.py --force-reprocess orders_2023.csv
   ```
 
+## SCD handling
+This project currently implements a simple Type 2-style approach for dimension updates:
+- When a dimension attribute changes, a new dimension row is created instead of overwriting the existing value.
+- The warehouse preserves historical context by keeping the prior version of the dimension record intact.
+- In this lightweight implementation, the current design uses the existing dimension tables with natural-key-based upsert behavior, which is sufficient for tracking change history at a basic level.
+
 ## Expected behavior
 - Valid rows are loaded into the warehouse tables
 - Invalid rows are rejected and counted in the run summary
