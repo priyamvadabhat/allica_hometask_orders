@@ -11,23 +11,22 @@ def get_or_create_dim(connection: Any, table: str, value_map: dict[str, Any]) ->
     cursor = connection.cursor()
     columns = ", ".join(value_map.keys())
     placeholders = ", ".join(["?"] * len(value_map))
-    if table == "dim_client":
-        cursor.execute(
-            f"SELECT client_id FROM {table} WHERE client_name = ?",
-            (value_map.get("client_name", ""),),
-        )
-    elif table == "dim_product":
-        cursor.execute(
-            f"SELECT product_id FROM {table} WHERE product_name = ?",
-            (value_map.get("product_name", ""),),
-        )
-    elif table == "dim_payment":
-        cursor.execute(
-            f"SELECT payment_id FROM {table} WHERE payment_type = ?",
-            (value_map.get("payment_type", ""),),
-        )
-    else:
-        raise ValueError(f"Unsupported table {table}")
+
+    lookup_map = {
+        "dim_client": ("client_id", "client_name"),
+        "dim_product": ("product_id", "product_name"),
+        "dim_payment": ("payment_id", "payment_type"),
+    }
+
+    try:
+        lookup_column, value_key = lookup_map[table]
+    except KeyError as exc:
+        raise ValueError(f"Unsupported table {table}") from exc
+
+    cursor.execute(
+        f"SELECT {lookup_column} FROM {table} WHERE {value_key} = ?",
+        (value_map.get(value_key, ""),),
+    )
 
     existing = cursor.fetchone()
     if existing:
