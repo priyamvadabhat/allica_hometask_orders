@@ -6,6 +6,15 @@ from pathlib import Path
 from .utils import logger
 
 
+EXPECTED_TABLES = {
+    "dim_client": {"client_id", "client_name", "delivery_address", "delivery_city", "delivery_postcode", "delivery_country", "delivery_contact_number"},
+    "dim_product": {"product_id", "product_name", "product_type", "unit_price"},
+    "dim_payment": {"payment_id", "payment_type", "payment_billing_code"},
+    "fact_orders": {"order_line_id", "order_number", "client_id", "product_id", "payment_id", "order_date", "currency", "quantity", "unit_price", "total_price", "source_file_name", "load_timestamp"},
+    "load_log": {"load_id", "source_file_name", "loaded_at", "row_count", "status", "file_hash", "modified_at", "comment"},
+}
+
+
 def create_schema(connection: sqlite3.Connection) -> None:
     # Create the warehouse tables if they do not already exist.
     connection.executescript(
@@ -74,6 +83,22 @@ def create_schema(connection: sqlite3.Connection) -> None:
 
     connection.commit()
     logger.info("Warehouse schema initialized")
+
+
+def validate_schema(connection: sqlite3.Connection) -> None:
+    """Validate that the warehouse contains the expected tables and columns."""
+    for table_name, expected_columns in EXPECTED_TABLES.items():
+        table_exists = connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name = ?",
+            (table_name,),
+        ).fetchone()
+        if table_exists is None:
+            raise ValueError(f"Missing table: {table_name}")
+
+        columns = {row[1] for row in connection.execute(f"PRAGMA table_info({table_name})")}
+        missing_columns = expected_columns - columns
+        if missing_columns:
+            raise ValueError(f"Missing columns in {table_name}: {sorted(missing_columns)}")
 
 
 def get_connection(db_path: str | Path) -> sqlite3.Connection:
