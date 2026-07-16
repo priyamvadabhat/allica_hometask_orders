@@ -12,6 +12,7 @@ This project builds a small analytical warehouse in SQLite from CSV order files.
 | `load_log` | `load_id`, `source_file_name`, `loaded_at`, `row_count`, `status`, `file_hash`, `modified_at`, `comment` |
 
 ## Features covered
+- Convert xlsx files to csv files if they arrive.
 - Reads CSV files from an input folder
 - Extracts raw data through a dedicated extraction layer
 - Validates and cleans incoming rows in a transformation layer
@@ -25,7 +26,7 @@ This project builds a small analytical warehouse in SQLite from CSV order files.
 - Sends optional email notifications when SMTP settings are configured
 
 ## Test coverage
-- Happy-path load into the warehouse
+- Load into the warehouse
 - Validation of invalid rows
 - Normalization of whitespace and special characters
 - Multi-file processing
@@ -103,6 +104,7 @@ Logs in a different folder.
 Improvisations in logging - such as when the code executes, the display text is not consistent enough.
 Columns are hard coded in many places - consider centralizing it or having a metadata file.
 Archival of data in different folder.
-Backup of data before transformation can be in different folder. 
-Casing and spelling variations can appear to other fields, which can be taken into consideration. Ideally, this should be checked back with source team if it can be made consistent. 
+Backup of data before the transformation can be in different folder. 
+Casing and spelling variations can appear to other fields, which can be taken into consideration. Ideally, in a production scenario, this should be checked back with source team if it can be made consistent. 
 Compress raw file backups and archives.
+Include deletion of logs in a timely manner. 
