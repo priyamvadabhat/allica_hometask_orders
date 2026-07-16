@@ -1,0 +1,3 @@
+OrderNumber,ClientName,ProductName,PaymentType,PaymentDate,Currency,ProductQuantity,UnitPrice,TotalPrice
+PO1,Acme Ltd,Piano,Debit,2024-01-01,GBP,2,500,1000
+,,,Debit,bad-date,GBP,2,x,1000

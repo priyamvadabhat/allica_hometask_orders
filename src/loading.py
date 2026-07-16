@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 from typing import Any
+import sqlite3
 
 from .utils import clean_text, logger, parse_date, parse_decimal
 
@@ -28,59 +29,94 @@ def get_or_create_dim(connection: Any, table: str, value_map: dict[str, Any]) ->
     except KeyError as exc:
         raise ValueError(f"Unsupported table {table}") from exc
 
-    # Find the current version for this business key
+    # Prepare lookup value (transform.py should have normalized business keys where
+    # required). Use the provided value_map business key directly for lookup.
+    # Allow a caller to provide a pre-computed lookup variant (e.g. uppercased)
+    # so that display values can be preserved while matching is case-insensitive.
+    lookup_value = value_map.get(f"{value_key}_lookup") or value_map.get(value_key, "") or ""
+    # Use case-insensitive comparison for business keys so 'Acme' and 'ACME' match.
     cursor.execute(
-        f"SELECT * FROM {table} WHERE {value_key} = ? AND is_current = 1",
-        (value_map.get(value_key, ""),),
+        f"SELECT * FROM {table} WHERE UPPER({value_key}) = ? ORDER BY is_current DESC, effective_from DESC",
+        (str(lookup_value).upper(),),
     )
+    existing_rows = cursor.fetchall()
 
-    existing = cursor.fetchone()
-    if existing:
-        # Compare all provided attributes to detect changes.
-        changed = False
+    # If any existing row matches the incoming attributes under normalized
+    # comparison rules, treat it as a duplicate and return its id (do not insert).
+    for existing in existing_rows:
+        match = True
         for col, new_val in value_map.items():
-            # sqlite3.Row allows dict-like access
             old_val = existing[col]
             # Normalize None/empty string differences
             if old_val is None and (new_val is None or new_val == ""):
                 continue
-            if isinstance(old_val, float) or isinstance(old_val, int):
-                # numeric comparison via string/number cast
+
+            if col in ("client_name", "delivery_country"):
+                old_norm = str(old_val).strip().upper() if old_val is not None else ""
+                new_norm = str(new_val).strip().upper() if new_val is not None else ""
+                if col == "delivery_country":
+                    if old_norm == "UK":
+                        old_norm = "UNITED KINGDOM"
+                    if new_norm == "UK":
+                        new_norm = "UNITED KINGDOM"
+                if old_norm != new_norm:
+                    match = False
+                    break
+
+            elif isinstance(old_val, float) or isinstance(old_val, int):
                 try:
                     if float(old_val) != float(new_val if new_val not in (None, "") else 0):
-                        changed = True
+                        match = False
                         break
                 except Exception:
                     if str(old_val) != str(new_val):
-                        changed = True
+                        match = False
                         break
             else:
                 if str(old_val) != str(new_val if new_val is not None else ""):
-                    changed = True
+                    match = False
                     break
 
-        if not changed:
-            # No attribute changes — return existing surrogate id.
+        if match:
+            # Found an existing row that is equivalent under normalization —
+            # treat as duplicate and reuse its id (do not create another version).
             return existing[lookup_column]
 
-        # Attribute changed: expire the current record and insert a new version.
+    # No equivalent existing row found. If there is a current row, expire it
+    # and insert a new version; otherwise insert a first row.
+    current_row = existing_rows[0] if existing_rows else None
+    if current_row and current_row['is_current'] == 1:
         cursor.execute(
             f"UPDATE {table} SET is_current = 0, effective_to = ? WHERE {lookup_column} = ?",
-            (now_ts, existing[lookup_column]),
+            (now_ts, current_row[lookup_column]),
         )
 
     # Insert new current version (covers both no-existing and changed cases).
-    insert_columns = list(value_map.keys()) + ["effective_from", "effective_to", "is_current"]
+    # Remove any lookup-only keys before inserting into the table
+    insert_map = {k: v for k, v in value_map.items() if not k.endswith("_lookup")}
+    insert_columns = list(insert_map.keys()) + ["effective_from", "effective_to", "is_current"]
     placeholders = ", ".join(["?"] * len(insert_columns))
     columns = ", ".join(insert_columns)
-    insert_values = list(value_map.values()) + [now_ts, None, 1]
+    insert_values = list(insert_map.values()) + [now_ts, None, 1]
 
-    cursor.execute(
-        f"INSERT INTO {table} ({columns}) VALUES ({placeholders})",
-        insert_values,
-    )
-    connection.commit()
-    return cursor.lastrowid
+    try:
+        cursor.execute(
+            f"INSERT INTO {table} ({columns}) VALUES ({placeholders})",
+            insert_values,
+        )
+        connection.commit()
+        return cursor.lastrowid
+    except sqlite3.IntegrityError:
+        # If a unique constraint prevents insert (e.g. order), try to find an existing
+        # matching row by the business key and return its id.
+        cursor.execute(
+            f"SELECT {lookup_column} FROM {table} WHERE UPPER({value_key}) = ? LIMIT 1",
+            (str(lookup_value).upper(),),
+        )
+        found = cursor.fetchone()
+        if found:
+            return found[0]
+        raise
 
 
 def insert_fact_rows(connection: Any, batch_rows: list[tuple[Any, ...]]) -> None:
@@ -140,10 +176,14 @@ def prepare_fact_row(connection: Any, row: dict[str, Any], source_file_name: str
         connection,
         "dim_client",
         {
+            # Keep the stored client_name in original cleaned form so casing is
+            # preserved for display, but the SCD lookup will be case-insensitive.
             "client_name": clean_text(row.get("ClientName")),
             "delivery_address": clean_text(row.get("DeliveryAddress")),
             "delivery_city": clean_text(row.get("DeliveryCity")),
             "delivery_postcode": clean_text(row.get("DeliveryPostcode")),
+            # Keep the stored delivery_country in cleaned form; SCD lookup will
+            # treat 'UK' the same as 'UNITED KINGDOM' and be case-insensitive.
             "delivery_country": clean_text(row.get("DeliveryCountry")),
             "delivery_contact_number": clean_text(row.get("DeliveryContactNumber")),
         },

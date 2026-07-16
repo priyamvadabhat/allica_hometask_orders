@@ -1,0 +1,36 @@
+2026-07-16 07:26:01,861 INFO Warehouse schema initialized
+2026-07-16 07:26:01,862 INFO Processing file orders_2023_changed.csv
+2026-07-16 07:26:01,864 INFO Skipping duplicate order PO0060504-1
+2026-07-16 07:26:01,864 INFO Skipping duplicate order PO0060504-2
+2026-07-16 07:26:01,864 INFO Skipping duplicate order PO0060504-3
+2026-07-16 07:26:01,865 INFO Skipping duplicate order PO0060504-4
+2026-07-16 07:26:01,865 INFO Skipping duplicate order PO0060504-5
+2026-07-16 07:26:01,865 INFO Skipping duplicate order PO0011111-1
+2026-07-16 07:26:01,866 INFO Skipping duplicate order PO0011111-2
+2026-07-16 07:26:01,866 INFO Skipping duplicate order PO0011111-3
+2026-07-16 07:26:01,866 INFO Skipping duplicate order PO0011111-4
+2026-07-16 07:26:01,867 INFO Skipping duplicate order PO0074849-1
+2026-07-16 07:26:01,867 INFO Skipping duplicate order PO0024697-1
+2026-07-16 07:26:01,867 INFO Skipping duplicate order PO0024697-2
+2026-07-16 07:26:01,868 INFO Skipping duplicate order PO0096358-1
+2026-07-16 07:26:01,868 INFO Skipping duplicate order PO0096358-2
+2026-07-16 07:26:01,868 INFO Skipping duplicate order PO0096358-3
+2026-07-16 07:26:01,869 INFO Skipping duplicate order PO0013360-1
+2026-07-16 07:26:01,869 INFO Skipping duplicate order PO0013360-2
+2026-07-16 07:26:01,869 INFO Skipping duplicate order PO0013360-3
+2026-07-16 07:26:01,870 INFO Skipping duplicate order PO0097680-1
+2026-07-16 07:26:01,870 INFO Skipping duplicate order PO0097680-2
+2026-07-16 07:26:01,870 INFO Skipping duplicate order PO0097680-3
+2026-07-16 07:26:01,871 INFO Skipping duplicate order PO0097680-4
+2026-07-16 07:26:01,871 INFO Skipping duplicate order PO0097299-1
+2026-07-16 07:26:01,871 INFO Skipping duplicate order PO0097299-2
+2026-07-16 07:26:01,872 INFO Skipping duplicate order PO0097299-3
+2026-07-16 07:26:01,872 INFO Skipping duplicate order PO0097299-4
+2026-07-16 07:26:01,878 INFO Archived processed file orders_2023_changed.csv to data/raw/archive/orders_2023_changed.csv
+2026-07-16 07:26:02,473 WARNING Unable to send email notification to bhatpriyamvada@gmail.com: SMTP AUTH extension not supported by server.
+2026-07-16 07:26:02,473 INFO Processed file: orders_2023_changed.csv
+Execution date: 2026-07-16 07:26:01
+Total rows in file: 26
+Rows loaded: 0
+Rows rejected: 0
+Reject reasons: None

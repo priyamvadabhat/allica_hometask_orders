@@ -40,6 +40,11 @@ This project builds a small analytical warehouse in SQLite from CSV order files.
 - Archived files: `data/raw/archive`
 - SQLite database: `data/orders_warehouse.db`
 - Pipeline logs: `data/pipeline_YYYYMMDD_HHMMSS.log`
+ - Raw backup files (pre-transform): `data/raw/backups/{source_file_name}_{timestamp}/` containing CSVs:
+   - `{source_file_name}_raw_dim_client.csv`
+   - `{source_file_name}_raw_dim_product.csv`
+   - `{source_file_name}_raw_dim_payment.csv`
+   - `{source_file_name}_raw_fact_orders.csv`
 
 ## Project structure
 - [src/extract.py](src/extract.py): file discovery, hashing, and CSV row extraction
@@ -79,6 +84,7 @@ This project currently implements a simple Type 2-style approach for dimension u
 - When a dimension attribute changes, a new dimension row is created instead of overwriting the existing value.
 - The warehouse preserves historical context by keeping the prior version of the dimension record intact.
 - In this lightweight implementation, the current design uses the existing dimension tables with natural-key-based upsert behavior, which is sufficient for tracking change history at a basic level.
+Transformations, normalizations and deduplication are applied in `src/transform.py` before loading. Raw incoming data is backed up into CSVs under `data/raw/backups/` so the pre-transform state is preserved.
 
 ## Expected behavior
 - Valid rows are loaded into the warehouse tables

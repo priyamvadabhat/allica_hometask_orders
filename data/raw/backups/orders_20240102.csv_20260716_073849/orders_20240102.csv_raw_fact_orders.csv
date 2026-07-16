@@ -1,0 +1,2 @@
+OrderNumber,ClientName,ProductName,PaymentType,PaymentDate,Currency,ProductQuantity,UnitPrice,TotalPrice
+PO4,Gamma Ltd,Drum,Debit,2024-01-04,GBP,2,80,160
