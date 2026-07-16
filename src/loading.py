@@ -7,10 +7,15 @@ from .utils import clean_text, logger, parse_date, parse_decimal
 
 
 def get_or_create_dim(connection: Any, table: str, value_map: dict[str, Any]) -> int:
-    # Look up a dimension row by its business key. If it does not exist, create it.
+    # SCD Type 2 handling for dimensions.
+    # - Business key lookup targets the current row (`is_current = 1`).
+    # - If the current row exists and attributes are unchanged -> return existing surrogate id.
+    # - If attributes changed -> mark existing row `is_current = 0` and set `effective_to`,
+    #   then insert a new row with `effective_from` and `is_current = 1`.
+    # - If no current row exists -> insert a new row with `effective_from` and `is_current = 1`.
+
     cursor = connection.cursor()
-    columns = ", ".join(value_map.keys())
-    placeholders = ", ".join(["?"] * len(value_map))
+    now_ts = datetime.now(timezone.utc).isoformat()
 
     lookup_map = {
         "dim_client": ("client_id", "client_name"),
@@ -23,18 +28,56 @@ def get_or_create_dim(connection: Any, table: str, value_map: dict[str, Any]) ->
     except KeyError as exc:
         raise ValueError(f"Unsupported table {table}") from exc
 
+    # Find the current version for this business key
     cursor.execute(
-        f"SELECT {lookup_column} FROM {table} WHERE {value_key} = ?",
+        f"SELECT * FROM {table} WHERE {value_key} = ? AND is_current = 1",
         (value_map.get(value_key, ""),),
     )
 
     existing = cursor.fetchone()
     if existing:
-        return existing[0]
+        # Compare all provided attributes to detect changes.
+        changed = False
+        for col, new_val in value_map.items():
+            # sqlite3.Row allows dict-like access
+            old_val = existing[col]
+            # Normalize None/empty string differences
+            if old_val is None and (new_val is None or new_val == ""):
+                continue
+            if isinstance(old_val, float) or isinstance(old_val, int):
+                # numeric comparison via string/number cast
+                try:
+                    if float(old_val) != float(new_val if new_val not in (None, "") else 0):
+                        changed = True
+                        break
+                except Exception:
+                    if str(old_val) != str(new_val):
+                        changed = True
+                        break
+            else:
+                if str(old_val) != str(new_val if new_val is not None else ""):
+                    changed = True
+                    break
+
+        if not changed:
+            # No attribute changes — return existing surrogate id.
+            return existing[lookup_column]
+
+        # Attribute changed: expire the current record and insert a new version.
+        cursor.execute(
+            f"UPDATE {table} SET is_current = 0, effective_to = ? WHERE {lookup_column} = ?",
+            (now_ts, existing[lookup_column]),
+        )
+
+    # Insert new current version (covers both no-existing and changed cases).
+    insert_columns = list(value_map.keys()) + ["effective_from", "effective_to", "is_current"]
+    placeholders = ", ".join(["?"] * len(insert_columns))
+    columns = ", ".join(insert_columns)
+    insert_values = list(value_map.values()) + [now_ts, None, 1]
 
     cursor.execute(
         f"INSERT INTO {table} ({columns}) VALUES ({placeholders})",
-        list(value_map.values()),
+        insert_values,
     )
     connection.commit()
     return cursor.lastrowid

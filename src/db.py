@@ -7,9 +7,9 @@ from .utils import logger
 
 
 EXPECTED_TABLES = {
-    "dim_client": {"client_id", "client_name", "delivery_address", "delivery_city", "delivery_postcode", "delivery_country", "delivery_contact_number"},
-    "dim_product": {"product_id", "product_name", "product_type", "unit_price"},
-    "dim_payment": {"payment_id", "payment_type", "payment_billing_code"},
+    "dim_client": {"client_id", "client_name", "delivery_address", "delivery_city", "delivery_postcode", "delivery_country", "delivery_contact_number", "effective_from", "effective_to", "is_current"},
+    "dim_product": {"product_id", "product_name", "product_type", "unit_price", "effective_from", "effective_to", "is_current"},
+    "dim_payment": {"payment_id", "payment_type", "payment_billing_code", "effective_from", "effective_to", "is_current"},
     "fact_orders": {"order_line_id", "order_number", "client_id", "product_id", "payment_id", "order_date", "currency", "quantity", "unit_price", "total_price", "source_file_name", "load_timestamp"},
     "load_log": {"load_id", "source_file_name", "loaded_at", "row_count", "status", "file_hash", "modified_at", "comment"},
 }
@@ -21,25 +21,34 @@ def create_schema(connection: sqlite3.Connection) -> None:
         """
         CREATE TABLE IF NOT EXISTS dim_client (
             client_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            client_name TEXT NOT NULL UNIQUE,
+            client_name TEXT NOT NULL,
             delivery_address TEXT,
             delivery_city TEXT,
             delivery_postcode TEXT,
             delivery_country TEXT,
-            delivery_contact_number TEXT
+            delivery_contact_number TEXT,
+            effective_from TEXT NOT NULL,
+            effective_to TEXT,
+            is_current INTEGER NOT NULL DEFAULT 1
         );
 
         CREATE TABLE IF NOT EXISTS dim_product (
             product_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            product_name TEXT NOT NULL UNIQUE,
+            product_name TEXT NOT NULL,
             product_type TEXT,
-            unit_price REAL
+            unit_price REAL,
+            effective_from TEXT NOT NULL,
+            effective_to TEXT,
+            is_current INTEGER NOT NULL DEFAULT 1
         );
 
         CREATE TABLE IF NOT EXISTS dim_payment (
             payment_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            payment_type TEXT NOT NULL UNIQUE,
-            payment_billing_code TEXT
+            payment_type TEXT NOT NULL,
+            payment_billing_code TEXT,
+            effective_from TEXT NOT NULL,
+            effective_to TEXT,
+            is_current INTEGER NOT NULL DEFAULT 1
         );
 
         CREATE TABLE IF NOT EXISTS fact_orders (

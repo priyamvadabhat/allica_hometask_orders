@@ -1,4 +1,5 @@
 """Main ETL orchestration for loading order CSV files into the SQLite warehouse."""
+#Discovers the files, handles notifications and logging
 
 # Optional email notifications:
 # The ETL pipeline will work normally without SMTP setup.

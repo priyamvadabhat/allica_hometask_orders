@@ -2,6 +2,15 @@
 
 This project builds a small analytical warehouse in SQLite from CSV order files.
 
+## Tables and fields
+| Table | Fields |
+|---|---|
+| `dim_client` | `client_id`, `client_name`, `delivery_address`, `delivery_city`, `delivery_postcode`, `delivery_country`, `delivery_contact_number`, `effective_from`, `effective_to`, `is_current` |
+| `dim_product` | `product_id`, `product_name`, `product_type`, `unit_price`, `effective_from`, `effective_to`, `is_current` |
+| `dim_payment` | `payment_id`, `payment_type`, `payment_billing_code`, `effective_from`, `effective_to`, `is_current` |
+| `fact_orders` | `order_line_id`, `order_number`, `client_id`, `product_id`, `payment_id`, `order_date`, `currency`, `quantity`, `unit_price`, `total_price`, `source_file_name`, `load_timestamp` |
+| `load_log` | `load_id`, `source_file_name`, `loaded_at`, `row_count`, `status`, `file_hash`, `modified_at`, `comment` |
+
 ## Features covered
 - Reads CSV files from an input folder
 - Extracts raw data through a dedicated extraction layer
