@@ -96,7 +96,7 @@ def transform_rows(connection: Any, rows: list[dict[str, Any]], source_file_name
         country_norm = country.upper() if country else ""
         if country_norm == "UK":
             country_norm = "UNITED KINGDOM"
-        row["DeliveryCountry"] = country
+        row["DeliveryCountry"] = "UNITED KINGDOM" if country_norm == "UNITED KINGDOM" else country_norm
         row["DeliveryCountry_lookup"] = country_norm
 
         # Now prepare using loading logic
