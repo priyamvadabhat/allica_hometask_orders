@@ -45,10 +45,11 @@ def create_schema(connection: sqlite3.Connection) -> None:
         CREATE TABLE IF NOT EXISTS dim_payment (
             payment_id INTEGER PRIMARY KEY AUTOINCREMENT,
             payment_type TEXT NOT NULL,
-            payment_billing_code TEXT,
+            payment_billing_code TEXT NOT NULL,
             effective_from TEXT NOT NULL,
             effective_to TEXT,
-            is_current INTEGER NOT NULL DEFAULT 1
+            is_current INTEGER NOT NULL DEFAULT 1,
+            UNIQUE(payment_type, payment_billing_code, effective_from)
         );
 
         CREATE TABLE IF NOT EXISTS fact_orders (

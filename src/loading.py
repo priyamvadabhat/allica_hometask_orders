@@ -21,23 +21,32 @@ def get_or_create_dim(connection: Any, table: str, value_map: dict[str, Any]) ->
     lookup_map = {
         "dim_client": ("client_id", "client_name"),
         "dim_product": ("product_id", "product_name"),
-        "dim_payment": ("payment_id", "payment_type"),
+            "dim_payment": ("payment_id", ["payment_type", "payment_billing_code"]),
     }
 
     try:
-        lookup_column, value_key = lookup_map[table]
+        lookup_column, value_keys = lookup_map[table]
     except KeyError as exc:
         raise ValueError(f"Unsupported table {table}") from exc
+    
+    # Ensure value_keys is always a list
+    if isinstance(value_keys, str):
+        value_keys = [value_keys]
+
+
+        # Build WHERE clause dynamically for one or more keys
+    where_clause = " AND ".join([f"UPPER({key}) = ?" for key in value_keys])
+    values = [str(value_map.get(key, "")).upper() for key in value_keys]
 
     # Prepare lookup value (transform.py should have normalized business keys where
     # required). Use the provided value_map business key directly for lookup.
     # Allow a caller to provide a pre-computed lookup variant (e.g. uppercased)
     # so that display values can be preserved while matching is case-insensitive.
-    lookup_value = value_map.get(f"{value_key}_lookup") or value_map.get(value_key, "") or ""
+    #lookup_value = value_map.get(f"{value_keys}_lookup") or value_map.get(value_keys, "") or ""
     # Use case-insensitive comparison for business keys so 'Acme' and 'ACME' match.
     cursor.execute(
-        f"SELECT * FROM {table} WHERE UPPER({value_key}) = ? ORDER BY is_current DESC, effective_from DESC",
-        (str(lookup_value).upper(),),
+        f"SELECT * FROM {table} WHERE {where_clause} AND is_current = 1 ORDER BY effective_from DESC",
+        values,
     )
     existing_rows = cursor.fetchall()
 
@@ -87,8 +96,8 @@ def get_or_create_dim(connection: Any, table: str, value_map: dict[str, Any]) ->
     current_row = existing_rows[0] if existing_rows else None
     if current_row and current_row['is_current'] == 1:
         cursor.execute(
-            f"UPDATE {table} SET is_current = 0, effective_to = ? WHERE {lookup_column} = ?",
-            (now_ts, current_row[lookup_column]),
+           f"UPDATE {table} SET is_current = 0, effective_to = ? WHERE {where_clause} AND {lookup_column} = ?",
+        [now_ts] + values + [current_row[lookup_column]],
         )
 
     # Insert new current version (covers both no-existing and changed cases).
@@ -110,8 +119,8 @@ def get_or_create_dim(connection: Any, table: str, value_map: dict[str, Any]) ->
         # If a unique constraint prevents insert (e.g. order), try to find an existing
         # matching row by the business key and return its id.
         cursor.execute(
-            f"SELECT {lookup_column} FROM {table} WHERE UPPER({value_key}) = ? LIMIT 1",
-            (str(lookup_value).upper(),),
+            f"SELECT {lookup_column} FROM {table} WHERE {where_clause} LIMIT 1",
+            values,
         )
         found = cursor.fetchone()
         if found:
