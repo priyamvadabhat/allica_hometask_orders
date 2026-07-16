@@ -34,6 +34,8 @@ This project builds a small analytical warehouse in SQLite from CSV order files.
 - Schema validation for required warehouse tables and columns
 - Environment loading from .env
 - Archival of processed files
+- Normalization of client_name and delivery_country
+- SCD type 2 logic - tested by adding a new row to the csv file, modifying a new row to the csv file.
 
 ## Input and output locations
 - Input folder: `data/raw`
@@ -83,7 +85,7 @@ This project builds a small analytical warehouse in SQLite from CSV order files.
 This project currently implements a simple Type 2-style approach for dimension updates:
 - When a dimension attribute changes, a new dimension row is created instead of overwriting the existing value.
 - The warehouse preserves historical context by keeping the prior version of the dimension record intact.
-- In this lightweight implementation, the current design uses the existing dimension tables with natural-key-based upsert behavior, which is sufficient for tracking change history at a basic level.
+
 Transformations, normalizations and deduplication are applied in `src/transform.py` before loading. Raw incoming data is backed up into CSVs under `data/raw/backups/` so the pre-transform state is preserved.
 
 ## Expected behavior
@@ -94,3 +96,13 @@ Transformations, normalizations and deduplication are applied in `src/transform.
 - The warehouse schema is validated to ensure the expected tables and columns exist
 - If SMTP is not configured, the pipeline continues normally and logs the notification attempt instead of failing
 - If SMTP is configured, notification emails are sent for processed or skipped files
+
+
+Improvisations which can be done:
+Logs in a different folder. 
+Improvisations in logging - such as when the code executes, the display text is not consistent enough.
+Columns are hard coded in many places - consider centralizing it or having a metadata file.
+Archival of data in different folder.
+Backup of data before transformation can be in different folder. 
+Casing and spelling variations can appear to other fields, which can be taken into consideration. Ideally, this should be checked back with source team if it can be made consistent. 
+Compress raw file backups and archives.
