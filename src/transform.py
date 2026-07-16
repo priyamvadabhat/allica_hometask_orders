@@ -89,14 +89,14 @@ def transform_rows(connection: Any, rows: list[dict[str, Any]], source_file_name
         # Normalizations (business-key canonicalization)
         client_name = clean_text(row.get("ClientName"))
         # Keep the cleaned display value, but store a lookup form for matching.
-        row["ClientName"] = client_name
+        row["ClientName"] = client_name.upper()
         row["ClientName_lookup"] = client_name.upper()
 
         country = clean_text(row.get("DeliveryCountry"))
         country_norm = country.upper() if country else ""
-        if country_norm == "UK":
-            country_norm = "UNITED KINGDOM"
-        row["DeliveryCountry"] = "UNITED KINGDOM" if country_norm == "UNITED KINGDOM" else country_norm
+        if country_norm in ("UK", "UNITED KINGDOM", "UNITED KINGDOM "):  # handle variants
+           country_norm = "UNITED KINGDOM"
+        row["DeliveryCountry"] = country_norm
         row["DeliveryCountry_lookup"] = country_norm
 
         # Now prepare using loading logic
