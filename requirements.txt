@@ -3,6 +3,7 @@
 
 # Test dependency
 pytest>=8.0.0
+pandas==2.2.2
 
 # Note:
 # The ETL pipeline itself uses only Python standard-library modules.
